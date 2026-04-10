@@ -74,7 +74,7 @@ class DQNAgent(BaseAgent):
         )
         self.target_network=MLP(
             input_dim=state_dim,
-            output_sim=action_dim,
+            output_dim=action_dim,
             hidden_dims=hidden_dims
         )
 
@@ -86,7 +86,7 @@ class DQNAgent(BaseAgent):
         self.optimizer =Adam(self.q_network.parameters(),lr=learning_rate)
         self.loss_fn=nn.MSELoss()
 
-        self.replay_buffer =ReplayBuffer(capacity=buffer_capacity())
+        self.replay_buffer =ReplayBuffer(capacity=buffer_capacity)
 
         self.update_steps =0
 

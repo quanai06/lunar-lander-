@@ -75,7 +75,7 @@ flowchart LR
 
 ### Công thức cập nhật
 
-Trong repo này, target của DQN được tính theo Bellman target chuẩn:
+target của DQN được tính theo Bellman target :
 
 ```text
 y = r + gamma * max_a' Q_target(s', a') * (1 - done)

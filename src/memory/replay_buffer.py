@@ -57,9 +57,11 @@ class ReplayBuffer:
             A tuple of:
                 states, actions, rewards, next_states, dones
         """
-        if batch_size <=0 :
+        if batch_size <= 0:
+            raise ValueError("batch_size must be > 0")
+        if len(self.buffer) < batch_size:
             raise ValueError(
-                f"Not enough samples in buffer : requested{batch_size},available{len(batch_size)}"
+                f"Not enough samples in buffer: requested {batch_size}, available {len(self.buffer)}"
             )
         batch=random.sample(self.buffer, batch_size)
 

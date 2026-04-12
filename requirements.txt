@@ -1,6 +1,7 @@
-torch 
-numpy 
-pandas 
-gymnasium 
+torch
+numpy
+pandas
+gymnasium[box2d]
+swig
 pytest
 pyyaml

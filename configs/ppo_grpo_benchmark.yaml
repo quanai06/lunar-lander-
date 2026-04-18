@@ -1,0 +1,35 @@
+env:
+  env_id: "LunarLander-v3"
+  render_mode: null
+  seed: 42
+
+shared_agent:
+  hidden_dims: [128, 128]
+  learning_rate: 0.001
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_eps: 0.2
+  entropy_coef: 0.01
+  value_coef: 0.5
+  update_epochs: 8
+  mini_batch_size: 64
+  max_grad_norm: 0.5
+  group_size: 32
+  device: "cuda"
+
+trainer:
+  num_episodes: 1500
+  max_steps_per_episode: 1000
+  save_every: 10
+
+benchmark:
+  algorithms: ["ppo", "grpo"]
+  eval_episodes: 50
+  train_reward_window: 20
+  verbose: true
+
+paths:
+  checkpoint_root: "outputs/checkpoints_on_policy"
+  benchmark_csv: "outputs/benchmark/on_policy_benchmark.csv"
+
+algorithm_overrides: {}

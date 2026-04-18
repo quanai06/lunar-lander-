@@ -135,10 +135,10 @@ Nếu máy vẫn báo thiếu Box2D khi chạy `LunarLander-v3`, cài bổ sung:
 
 ```bash
 pip install swig
-pip install "gymnasium[box2d]"
+pip install gymnasium[box2d]
 ```
 
-### 2. Train agent
+### 2. Train agent DQN
 
 ```bash
 python scripts/train.py
@@ -151,6 +151,53 @@ Script sẽ:
 - Lưu checkpoint định kỳ
 - Đánh giá nhanh sau train
 - Ghi video sau khi train
+
+### 2.1 Benchmark PPO vs GRPO (shared parameters)
+
+Repo benchmark 2 thuật toán on-policy là `PPO` và `GRPO` bằng cùng bộ tham số trong:
+
+- `configs/ppo_grpo_benchmark.yaml`
+
+Chạy benchmark:
+
+```bash
+python scripts/benchmark_on_policy.py
+```
+
+Kết quả được lưu tại:
+
+- `outputs/benchmark/on_policy_benchmark.csv`
+
+### 2.2 PPO và GRPO là gì?
+
+- `PPO (Proximal Policy Optimization)` là thuật toán policy-gradient on-policy.
+- `PPO` dùng objective dạng clipped ratio để tránh policy thay đổi quá đột ngột.
+- `PPO` trong code hiện tại dùng actor-critic: policy loss + value loss + entropy regularization.
+- `GRPO (Group Relative Policy Optimization)` cũng là policy optimization với clipping tương tự PPO.
+- Điểm khác chính của `GRPO` trong repo này: advantage được chuẩn hóa theo từng nhóm trajectory return, `adv = (return - mean_group) / std_group`.
+- `GRPO` hiện không dùng critic value làm baseline như PPO.
+
+### 2.3 Kết quả benchmark (1500 episode)
+
+| algorithm | episodes | train_mean_reward_last_window | train_std_reward_last_window | eval_mean_reward | eval_std_reward | eval_mean_length |
+|---|---:|---:|---:|---:|---:|---:|
+| ppo | 1500 | -148.137076 | 45.680370 | -137.760041 | 50.823957 | 69.78 |
+| grpo | 1500 | -152.222595 | 54.260105 | -162.852984 | 34.613039 | 393.32 |
+
+### 2.4 Phân tích chi tiết từ số liệu
+
+- Chất lượng policy theo chỉ số chính `eval_mean_reward`: `PPO` tốt hơn `GRPO` ở run này (`-137.76` > `-162.85`, chênh khoảng `25.09` điểm).
+- Cả hai vẫn đang ở vùng reward âm nên chưa đạt hiệu năng tốt trên LunarLander-v3.
+- Độ ổn định khi evaluate theo `eval_std_reward`: `GRPO` ổn định hơn (`34.61`) so với `PPO` (`50.82`), nhưng ổn định quanh mức reward thấp hơn.
+- Hành vi theo `eval_mean_length`: `PPO` có episode ngắn (`69.78`), thường là kết thúc sớm; `GRPO` có episode dài (`393.32`), bay lâu hơn nhưng vẫn tích lũy phạt.
+- Ở train window cuối (`train_mean_reward_last_window`), hai thuật toán khá sát nhau: `PPO = -148.14`, `GRPO = -152.22`, PPO nhỉnh hơn nhẹ.
+
+### 2.5 Vì sao 1500 episode vẫn thấp?
+
+- Đây là môi trường khó, reward dương ổn định cần policy đủ tốt ở nhiều kỹ năng cùng lúc (điều khiển lực đẩy, góc, vận tốc, hạ cánh mềm).
+- `PPO/GRPO` là on-policy nên hiệu quả mẫu thường thấp hơn các phương pháp replay-buffer trong một số setup.
+- Bộ shared-parameter giúp benchmark công bằng, nhưng chưa chắc là bộ tham số tối ưu riêng cho từng thuật toán.
+- `GRPO` trong repo đang dùng normalized group return baseline, nên có thể học ổn định hơn nhưng chưa đủ mạnh để tăng reward trung bình trong cấu hình hiện tại.
 
 ### 3. Kết quả đầu ra
 
@@ -172,23 +219,37 @@ outputs/
 ```text
 .
 ├── configs/
-│   └── dqn.yaml
+│   ├── dqn.yaml
+│   └── ppo_grpo_benchmark.yaml
 ├── scripts/
+│   ├── benchmark_on_policy.py
 │   └── train.py
 ├── src/
 │   ├── agents/
 │   │   ├── base_agent.py
-│   │   └── dqn_agent.py
+│   │   ├── dqn_agent.py
+│   │   ├── grpo_agent.py
+│   │   └── ppo_agent.py
 │   ├── memory/
-│   │   └── replay_buffer.py
+│   │   ├── replay_buffer.py
+│   │   └── trajectory_buffer.py
 │   ├── models/
 │   │   └── mlp.py
 │   ├── trainers/
+│   │   ├── on_policy_trainer.py
 │   │   └── trainer.py
 │   ├── envs.py
 │   └── utils/
 │       └── seed.py
 ├── outputs/
+│   ├── benchmark/
+│   ├── checkpoints/
+│   ├── checkpoints_on_policy/
+│   └── videos/
 └── tests/
+    ├── test_dqn_agent.py
+    ├── test_mlp.py
+    ├── test_on_policy_agents.py
+    ├── test_replay_buffer.py
+    └── test_trajectory_buffer.py
 ```
-
